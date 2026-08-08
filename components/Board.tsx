@@ -21,7 +21,7 @@ export function Board({ tiles }: BoardProps) {
   const cells = Array.from({ length: GRID_SIZE * GRID_SIZE });
 
   return (
-    <div className="relative rounded-2xl bg-slate-800 p-3" style={boardStyle}>
+    <div className="relative touch-none rounded-2xl bg-slate-800 p-3" style={boardStyle}>
       <div className="grid h-full w-full grid-cols-4 grid-rows-4 gap-3">
         {cells.map((_, index) => (
           <div key={index} className="rounded-xl bg-slate-700/50" />

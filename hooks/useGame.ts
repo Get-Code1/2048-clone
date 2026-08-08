@@ -1,7 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { createInitialTiles, move, settleTiles, spawnRandomTile } from '@/lib/engine';
+import {
+  createInitialTiles,
+  hasReached2048,
+  isGameOver,
+  move,
+  settleTiles,
+  spawnRandomTile,
+} from '@/lib/engine';
 import {
   clearGameState,
   loadBestScore,
@@ -9,7 +16,8 @@ import {
   saveBestScore,
   saveGameState,
 } from '@/lib/storage';
-import { Direction, GameTile } from '@/lib/types';
+import { Direction, GameStatus, GameTile } from '@/lib/types';
+import { useSwipe } from './useSwipe';
 
 const KEY_TO_DIRECTION: Record<string, Direction> = {
   ArrowUp: 'up',
@@ -24,6 +32,7 @@ export function useGame() {
   const [tiles, setTiles] = useState<GameTile[]>([]);
   const [score, setScore] = useState(0);
   const [bestScore, setBestScore] = useState(0);
+  const [keepPlaying, setKeepPlaying] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Randomized/persisted state is seeded client-side only, after mount, to
@@ -34,14 +43,21 @@ export function useGame() {
     if (saved && saved.tiles.length > 0) {
       setTiles(saved.tiles);
       setScore(saved.score);
+      setKeepPlaying(saved.keepPlaying);
     } else {
       setTiles(createInitialTiles());
     }
     setIsLoaded(true);
   }, []);
 
+  const hasWon = hasReached2048(tiles);
+  const isOver = isGameOver(tiles);
+  const status: GameStatus = isOver ? 'over' : hasWon && !keepPlaying ? 'won' : 'playing';
+
   const applyMove = useCallback(
     (direction: Direction) => {
+      if (status !== 'playing') return;
+
       const result = move(tiles, direction);
       if (!result.moved) return;
 
@@ -53,7 +69,7 @@ export function useGame() {
         setScore((prev) => prev + result.scoreDelta);
       }
     },
-    [tiles]
+    [tiles, status]
   );
 
   useEffect(() => {
@@ -68,10 +84,17 @@ export function useGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [applyMove]);
 
+  useSwipe(applyMove);
+
   const restart = useCallback(() => {
     clearGameState();
     setScore(0);
+    setKeepPlaying(false);
     setTiles(createInitialTiles());
+  }, []);
+
+  const continuePlaying = useCallback(() => {
+    setKeepPlaying(true);
   }, []);
 
   // Drop merged-away ghost tiles and one-shot animation flags once their
@@ -89,9 +112,10 @@ export function useGame() {
     saveGameState({
       tiles: tiles.filter((t) => !t.removing),
       score,
-      status: 'playing',
+      status,
+      keepPlaying,
     });
-  }, [isLoaded, tiles, score]);
+  }, [isLoaded, tiles, score, status, keepPlaying]);
 
   useEffect(() => {
     if (score <= bestScore) return;
@@ -99,5 +123,5 @@ export function useGame() {
     saveBestScore(score);
   }, [score, bestScore]);
 
-  return { tiles, score, bestScore, applyMove, restart };
+  return { tiles, score, bestScore, status, applyMove, restart, continuePlaying };
 }

@@ -26,4 +26,5 @@ export interface SavedGameState {
   tiles: GameTile[];
   score: number;
   status: GameStatus;
+  keepPlaying: boolean;
 }
