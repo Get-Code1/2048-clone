@@ -9,6 +9,10 @@ body {
 
 body {
   font-feature-settings: 'ss01' on;
+  background-image:
+    radial-gradient(circle at 15% -10%, rgba(139, 92, 246, 0.16), transparent 55%),
+    radial-gradient(circle at 100% 10%, rgba(217, 70, 239, 0.1), transparent 45%);
+  background-attachment: fixed;
 }
 
 .tile-slot {

@@ -7,6 +7,10 @@ export const metadata: Metadata = {
   description: 'A distinct, dark-mode-friendly take on the classic 2048 puzzle.',
 };
 
+export const viewport = {
+  themeColor: '#0f0a2e',
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">

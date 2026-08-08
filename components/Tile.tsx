@@ -41,7 +41,7 @@ export function Tile({ tile }: TileProps) {
   };
 
   const faceClassName = [
-    'tile-face flex h-full w-full items-center justify-center rounded-xl font-bold',
+    'tile-face flex h-full w-full items-center justify-center rounded-xl font-bold shadow-md shadow-black/30',
     fontSizeClass(tile.value),
     valueStyle(tile.value),
     tile.isNew && 'tile-spawn',
