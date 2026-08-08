@@ -2,13 +2,17 @@
 
 import { useGame } from '@/hooks/useGame';
 import { Board } from './Board';
+import { ScoreBoard } from './ScoreBoard';
 
 export function Game() {
-  const { tiles, restart } = useGame();
+  const { tiles, score, bestScore, restart } = useGame();
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-6">
-      <h1 className="text-3xl font-bold tracking-tight">2048</h1>
+      <div className="flex w-full max-w-[440px] items-start justify-between">
+        <h1 className="text-3xl font-bold tracking-tight">2048</h1>
+        <ScoreBoard score={score} bestScore={bestScore} />
+      </div>
       <Board tiles={tiles} />
       <button
         type="button"

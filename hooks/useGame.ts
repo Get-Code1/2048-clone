@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { createInitialTiles, move, settleTiles, spawnRandomTile } from '@/lib/engine';
+import {
+  clearGameState,
+  loadBestScore,
+  loadGameState,
+  saveBestScore,
+  saveGameState,
+} from '@/lib/storage';
 import { Direction, GameTile } from '@/lib/types';
 
 const KEY_TO_DIRECTION: Record<string, Direction> = {
@@ -11,24 +18,43 @@ const KEY_TO_DIRECTION: Record<string, Direction> = {
   ArrowRight: 'right',
 };
 
+const SETTLE_DELAY_MS = 200;
+
 export function useGame() {
   const [tiles, setTiles] = useState<GameTile[]>([]);
+  const [score, setScore] = useState(0);
+  const [bestScore, setBestScore] = useState(0);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Board is randomized, so it's seeded client-side only, after mount, to
+  // Randomized/persisted state is seeded client-side only, after mount, to
   // avoid a server/client hydration mismatch.
   useEffect(() => {
-    setTiles(createInitialTiles());
+    setBestScore(loadBestScore());
+    const saved = loadGameState();
+    if (saved && saved.tiles.length > 0) {
+      setTiles(saved.tiles);
+      setScore(saved.score);
+    } else {
+      setTiles(createInitialTiles());
+    }
+    setIsLoaded(true);
   }, []);
 
-  const applyMove = useCallback((direction: Direction) => {
-    setTiles((current) => {
-      const result = move(current, direction);
-      if (!result.moved) return current;
+  const applyMove = useCallback(
+    (direction: Direction) => {
+      const result = move(tiles, direction);
+      if (!result.moved) return;
 
       const spawned = spawnRandomTile(result.tiles);
-      return spawned ? [...result.tiles, spawned] : result.tiles;
-    });
-  }, []);
+      const nextTiles = spawned ? [...result.tiles, spawned] : result.tiles;
+
+      setTiles(nextTiles);
+      if (result.scoreDelta > 0) {
+        setScore((prev) => prev + result.scoreDelta);
+      }
+    },
+    [tiles]
+  );
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -43,16 +69,35 @@ export function useGame() {
   }, [applyMove]);
 
   const restart = useCallback(() => {
+    clearGameState();
+    setScore(0);
     setTiles(createInitialTiles());
   }, []);
 
+  // Drop merged-away ghost tiles and one-shot animation flags once their
+  // transition/animation has had time to play.
   useEffect(() => {
     if (!tiles.some((t) => t.removing)) return;
     const timeout = setTimeout(() => {
       setTiles((current) => settleTiles(current));
-    }, 160);
+    }, SETTLE_DELAY_MS);
     return () => clearTimeout(timeout);
   }, [tiles]);
 
-  return { tiles, applyMove, restart };
+  useEffect(() => {
+    if (!isLoaded) return;
+    saveGameState({
+      tiles: tiles.filter((t) => !t.removing),
+      score,
+      status: 'playing',
+    });
+  }, [isLoaded, tiles, score]);
+
+  useEffect(() => {
+    if (score <= bestScore) return;
+    setBestScore(score);
+    saveBestScore(score);
+  }, [score, bestScore]);
+
+  return { tiles, score, bestScore, applyMove, restart };
 }

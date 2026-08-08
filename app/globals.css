@@ -10,3 +10,54 @@ body {
 body {
   font-feature-settings: 'ss01' on;
 }
+
+.tile-slot {
+  transition: transform 150ms ease;
+}
+
+.tile-face {
+  animation-duration: 200ms;
+  animation-timing-function: ease;
+  animation-fill-mode: backwards;
+}
+
+.tile-face.tile-spawn {
+  animation-name: tile-pop-in;
+}
+
+.tile-face.tile-merged {
+  animation-name: tile-merge-bounce;
+  animation-fill-mode: none;
+}
+
+.tile-face.tile-removing {
+  transition: opacity 150ms ease;
+  opacity: 0;
+}
+
+@keyframes tile-pop-in {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes tile-merge-bounce {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
