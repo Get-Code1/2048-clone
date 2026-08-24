@@ -1,4 +1,4 @@
-import { Direction, GameTile, GRID_SIZE, MoveResult } from './types';
+import { Direction, GameTile, GRID_SIZE, MoveResult, WIN_VALUE } from './types';
 
 export function createTileId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -125,7 +125,11 @@ export function settleTiles(tiles: GameTile[]): GameTile[] {
 }
 
 export function hasReached2048(tiles: GameTile[]): boolean {
-  return tiles.some((t) => !t.removing && t.value >= 2048);
+  return tiles.some((t) => !t.removing && t.value >= WIN_VALUE);
+}
+
+export function highestTileValue(tiles: GameTile[]): number {
+  return tiles.reduce((max, t) => (!t.removing && t.value > max ? t.value : max), 0);
 }
 
 export function isGameOver(tiles: GameTile[]): boolean {

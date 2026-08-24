@@ -3,6 +3,7 @@ export type Direction = 'up' | 'down' | 'left' | 'right';
 export type GameStatus = 'playing' | 'won' | 'over';
 
 export const GRID_SIZE = 4;
+export const WIN_VALUE = 2048;
 
 export interface GameTile {
   id: string;
@@ -27,4 +28,21 @@ export interface SavedGameState {
   score: number;
   status: GameStatus;
   keepPlaying: boolean;
+  /** Highest win-tile milestone (2048, 4096, 8192, ...) already celebrated,
+   * so a reload doesn't re-trigger a toast for a milestone already on the
+   * board. */
+  highestMilestone: number;
+}
+
+/** A single point in a game's move history: the settled board + score
+ * right after a move, used to scrub back through a finished game. */
+export interface HistoryEntry {
+  tiles: GameTile[];
+  score: number;
+}
+
+/** A transient "+N" score indicator shown briefly after a scoring move. */
+export interface ScorePopup {
+  id: string;
+  value: number;
 }

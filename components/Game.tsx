@@ -1,12 +1,28 @@
 'use client';
 
+import { useState } from 'react';
 import { useGame } from '@/hooks/useGame';
 import { Board } from './Board';
 import { GameOverlay } from './GameOverlay';
+import { Replay } from './Replay';
 import { ScoreBoard } from './ScoreBoard';
 
 export function Game() {
-  const { tiles, score, bestScore, status, restart, continuePlaying } = useGame();
+  const {
+    tiles,
+    score,
+    bestScore,
+    status,
+    history,
+    scorePopups,
+    showNewBest,
+    milestoneToast,
+    restart,
+    continuePlaying,
+  } = useGame();
+  const [isReplayOpen, setIsReplayOpen] = useState(false);
+
+  const canReplay = history.length > 1;
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6">
@@ -18,11 +34,16 @@ export function Game() {
               Join the tiles, reach <span className="font-semibold text-violet-300">2048</span>.
             </p>
           </div>
-          <ScoreBoard score={score} bestScore={bestScore} />
+          <ScoreBoard
+            score={score}
+            bestScore={bestScore}
+            scorePopups={scorePopups}
+            showNewBest={showNewBest}
+          />
         </header>
 
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-slate-400">Arrow keys or swipe to move.</p>
+          <p className="text-sm text-slate-400">Arrow keys, WASD, or swipe to move.</p>
           <button
             type="button"
             onClick={restart}
@@ -34,11 +55,25 @@ export function Game() {
 
         <div className="relative self-center">
           <Board tiles={tiles} />
+          {milestoneToast && (
+            <div className="pointer-events-none absolute inset-x-0 -top-3 flex justify-center">
+              <span className="toast-badge rounded-full bg-amber-400 px-3 py-1 text-xs font-bold text-slate-900 shadow-lg">
+                {milestoneToast}
+              </span>
+            </div>
+          )}
           {status !== 'playing' && (
-            <GameOverlay status={status} onKeepPlaying={continuePlaying} onRestart={restart} />
+            <GameOverlay
+              status={status}
+              onKeepPlaying={continuePlaying}
+              onRestart={restart}
+              onReplay={canReplay ? () => setIsReplayOpen(true) : undefined}
+            />
           )}
         </div>
       </div>
+
+      {isReplayOpen && <Replay history={history} onClose={() => setIsReplayOpen(false)} />}
     </main>
   );
 }

@@ -65,3 +65,33 @@ body {
     transform: scale(1);
   }
 }
+
+.score-popup {
+  animation: score-float 700ms ease-out forwards;
+}
+
+@keyframes score-float {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -28px);
+  }
+}
+
+.toast-badge {
+  animation: toast-in 200ms ease-out;
+}
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

@@ -79,10 +79,32 @@ win-state are saved to `localStorage` on every change, guarded with
 `typeof window !== 'undefined'` checks so the module is safe to import from
 code that might run during the static export build.
 
-**Controls**: keyboard (arrow keys) and touch swipe both live in
+**Controls**: keyboard (arrow keys, WASD, and vim-style hjkl — see
+`KEY_TO_DIRECTION` in `hooks/useGame.ts`) and touch swipe both live in
 `hooks/useGame.ts` / `hooks/useSwipe.ts`, both funneling into the same
 `applyMove(direction)`. Swipe direction is a simple `touchstart`/`touchend`
 delta threshold (30px), no gesture library.
+
+**Move history / replay (`hooks/useGame.ts`, `components/Replay.tsx`)**:
+every successful move appends a settled `{ tiles, score }` snapshot to an
+in-memory `history` array (capped at `MAX_HISTORY`, oldest trimmed first).
+`components/Replay.tsx` scrubs through it read-only — it is *not* live
+undo: there's no way to resume play from a rewound frame, only to review
+one after the fact, which is why it doesn't conflict with the "no undo"
+convention below. History is intentionally **not persisted** to
+localStorage (only the current board/score/settings are); a reload starts
+a fresh history from whatever state was restored.
+
+**Endless mode / milestones**: reaching 2048 still triggers the blocking
+`GameOverlay` ("won" status) exactly once, same as before. Past that,
+`highestMilestone` (persisted, starts at `WIN_VALUE`) tracks the highest
+power-of-two tile already celebrated; each new one (4096, 8192, ...) fires
+a brief non-blocking toast instead of another blocking overlay, so play
+continues uninterrupted after the player picks "Keep Playing" once. The
+transient toasts (new-best score, milestone, "+N" score popups) are all
+timer-based state in `useGame`, cleared via `setTimeout` rather than
+persisted — see `components/Toast.tsx` and the `.score-popup`/
+`.toast-badge` keyframes in `globals.css`.
 
 ## File structure
 
@@ -96,14 +118,16 @@ components/
   Game.tsx            # composition root: header, score, board, overlay
   Board.tsx            # background grid cells + board sizing CSS vars
   Tile.tsx              # single tile: position transform + spawn/merge animation
-  ScoreBoard.tsx          # score / best score display
+  ScoreBoard.tsx          # score / best score display + score popups / new-best toast
   GameOverlay.tsx          # win ("Keep Playing"/"New Game") and game-over overlay
+  Replay.tsx                # read-only scrubber over move history
+  Toast.tsx                  # small reusable pill badge (new-best, milestone)
 lib/
-  types.ts             # GameTile, Direction, GameStatus, SavedGameState
+  types.ts             # GameTile, Direction, GameStatus, SavedGameState, HistoryEntry, ScorePopup
   engine.ts              # pure move/merge/spawn/win/game-over logic
   storage.ts               # localStorage read/write, SSR-safe
 hooks/
-  useGame.ts             # owns board/score/status state, keyboard input, persistence
+  useGame.ts             # owns board/score/status/history state, keyboard+swipe input, persistence
   useSwipe.ts               # touch swipe -> Direction
 ```
 
@@ -116,8 +140,11 @@ hooks/
   deliberate scope decision, not an oversight — the engine isn't written
   to generalize to other sizes without changes to `isGameOver`'s adjacency
   checks and the board sizing CSS.
-- No undo — matches the classic 2048's behavior; this was an explicit
-  decision, not a missing feature.
+- No *live* undo — matches the classic 2048's behavior; this was an
+  explicit decision, not a missing feature. The replay viewer (above) is
+  read-only review of a finished/in-progress game's history, not a way to
+  resume play from an earlier point — don't wire `Replay` up to `applyMove`
+  or a "restore this frame" action without revisiting that decision.
 - Theme is slate/violet, dark-mode-first, intentionally distinct from the
   original's beige/orange. Tile value → color mapping lives in
   `components/Tile.tsx` (`VALUE_STYLES`).
